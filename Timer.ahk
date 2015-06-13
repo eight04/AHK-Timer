@@ -194,41 +194,38 @@ CreateTimer:
 	return
 
 checkTimer:	;計時器
-if (!timerQue.MaxIndex())
-{
-	setTimer, CheckTimer, Off
-	Menu, tray, tip, AHK Timer
+	; Stop ticking if que is empty
+	if (!timerQue.Length()) {
+		setTimer, CheckTimer, Off
+		Menu, tray, tip, AHK Timer
+		return
+	}
+	
+	TipQ := ""
+	; Update tray tip, popup
+	For i, v in timerQue {
+		if (A_now > value.endTime) {
+			fDeleteTimer(i,timerQue)
+			Popup(v.title)
+		} else {
+			if (TipQ) {
+				TipQ .= "`n"
+			}
+			TipQ .= fTip(v.title, v.endTime)
+		}
+	}
+	Menu, tray, tip, %TipQ%
+
+	; Modify TreeView
+	Gui, MainWindow: +LastFoundExist
+	ifWinExist {
+		For i,v in timerQue {
+			LV_Modify(i, "Col2", fTime(v.endTime))
+		}
+	}
 	return
-}
-TipQ=
-For i,v in timerQue
-{
-	_endTime:=v.endtime	;這邊加底線是避免打斷其它thread，變數稱重覆的bug
-	_timeTitle:=v.title	;根本的解決法是改用區域變數
-	if (A_now > _endTime)
-	{
-		fDeleteTimer(i,timerQue)
-		Popup(_timeTitle)
-	}
-	else
-	{
-		if TipQ <>
-			TipQ:=TipQ . "`n"
-		TipQ:=TipQ . fTip(_timetitle,_endTime)
-	}
-}
-Menu, tray, tip, %TipQ%
-
-;Modify TreeView
-Gui, MainWindow: +LastFoundExist
-ifWinExist {
-	For i,v in timerQue
-	{
-		LV_Modify(i,"Col2",fTime(v.endTime))
-	}
-}
-return
-
+	
+; Format tray tip
 fTip(title,endTime){
 	T:=A_Now
 	h:=endTime
@@ -242,6 +239,7 @@ fTip(title,endTime){
 	return title . " 還剩 " . h . " 時 " . m . " 分 " . s . "秒"
 }
 
+; Format time
 fTime(endTime){
 	T:=A_Now
 	h:=endTime
@@ -262,9 +260,8 @@ fTime(endTime){
 }
 
 selectL:
-LV_Selected:=A_EventInfo
-;msgBox %LV_Selected%
-return
+	LV_Selected := A_EventInfo
+	return
 
 Popup(title){
 	global setting
