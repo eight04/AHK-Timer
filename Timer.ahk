@@ -50,15 +50,15 @@ Gui, Add, Button, x146 y29 w100 h30 gSetHotkey, 設定快速鍵
 Gui, Add, CheckBox, x6 y67 w300 h30 vuseOutdate gSaveSetting, 使用過期的計時器
 Gui, Add, CheckBox, x6 y97 w300 h30 vusePopup gSaveSetting, 使用跳出視窗
 Gui, Add, CheckBox, x6 y127 w300 h30 vuseBeep gSaveSetting, 使用提示音
-Gui, Add, Button, x322 y30 w40 h40 gP1 vp1, ↖
-Gui, Add, Button, x372 y30 w40 h40 gP2 vp2, ↑
-Gui, Add, Button, x422 y30 w40 h40 gP3 vp3, ↗
-Gui, Add, Button, x322 y80 w40 h40 gP4 vp4, ←
-Gui, Add, Button, x372 y80 w40 h40 gP5 vp5, 。
-Gui, Add, Button, x422 y80 w40 h40 gP6 vp6, →
-Gui, Add, Button, x322 y130 w40 h40 gP7 vp7, ↙
-Gui, Add, Button, x372 y130 w40 h40 gP8 vp8, ↓
-Gui, Add, Button, x422 y130 w40 h40 gP9 vp9, ↘
+Gui, Add, Button, x322 y30 w40 h40 gChangeP vp1, ↖
+Gui, Add, Button, x372 y30 w40 h40 gChangeP vp2, ↑
+Gui, Add, Button, x422 y30 w40 h40 gChangeP vp3, ↗
+Gui, Add, Button, x322 y80 w40 h40 gChangeP vp4, ←
+Gui, Add, Button, x372 y80 w40 h40 gChangeP vp5, 。
+Gui, Add, Button, x422 y80 w40 h40 gChangeP vp6, →
+Gui, Add, Button, x322 y130 w40 h40 gChangeP vp7, ↙
+Gui, Add, Button, x372 y130 w40 h40 gChangeP vp8, ↓
+Gui, Add, Button, x422 y130 w40 h40 gChangeP vp9, ↘
 Gui, Add, GroupBox, x6 y167 w460 h200, 關於
 Gui, Add, Text, x16 y197 w440 h160 center, `n`n我的BLOG:`nhttp://eight04.blogspot.com`n`n我的MAIL:`neight04@gmail.com
 
@@ -102,38 +102,10 @@ return
 
 ; ==================== Label and Functions ==================
 
-P1:
-sp:=1
-Goto, ChangeP
-P2:
-sp:=2
-Goto, ChangeP
-P3:
-sp:=3
-Goto, ChangeP
-P4:
-sp:=4
-Goto, ChangeP
-P5:
-sp:=5
-Goto, ChangeP
-P6:
-sp:=6
-Goto, ChangeP
-P7:
-sp:=7
-Goto, ChangeP
-P8:
-sp:=8
-Goto, ChangeP
-P9:
-sp:=9
-Goto, ChangeP
-
 ChangeP:
 GuiControl, Enable, p%setting.placeAt%
-GuiControl, Disable, p%sp%
-setting.placeAt := sp
+setting.placeAt := SubStr(A_GuiControl, 2)
+GuiControl, Disable, p%setting.placeAt%
 saveSetting("placeAt")
 return
 
