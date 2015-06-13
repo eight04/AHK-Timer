@@ -15,26 +15,6 @@ setting := {
 
 loadSetting()
 
-loadSetting() {
-	global setting
-	for key, value in setting {
-		IniRead, value, Setting.ini, Setting, %key%, %value%
-		setting[key] := value
-	}
-}
-
-saveSetting(key:="") {
-	global setting
-	if (key) {
-		value := setting[key]
-		IniWrite, %value%, Setting.ini, Setting, %key%
-	} else {	
-		for key, value in setting {
-			IniWrite, %value%, Setting.ini, Setting, %key%
-		}
-	}
-}
-
 Hotkey, %setting.hotkey%, MakeWindow
 
 ;Make tray menu
@@ -107,27 +87,6 @@ GuiControl, Disable, p%setting.placeAt%
 ;Initial timer
 readFromLog(timerQue)
 
-readFromLog(que) {
-	global LOG_FILE
-	
-	Loop, read, %LOG_FILE%, %LOG_FILE%~
-	{
-		StringSplit, q, A_LoopReadLine, %A_Tab%
-		if(q0 < 2)
-			continue
-		if(q1 < A_Now && !setting.outdated)
-			continue
-		FileAppend, %A_LoopReadLine%`n
-		o := {
-			title: q1,
-			endTime: q1
-		}
-		timerQue.insert(o)
-	}
-	FileDelete, %LOG_FILE%
-	FileMove, %LOG_FILE%~, %LOG_FILE%
-}
-
 ;Initial ListView
 For i,v in timerQue
 {
@@ -140,6 +99,8 @@ LV_ModifyCol(2,"AutoHdr Right")
 SetTimer, CheckTimer, On
 
 return
+
+; ==================== Label and Functions ==================
 
 P1:
 sp:=1
@@ -438,3 +399,45 @@ writeToLog(que){
 		FileAppend, %line%, %LOG_FILE%
 	}
 }
+
+loadSetting() {
+	global setting
+	for key, value in setting {
+		IniRead, value, Setting.ini, Setting, %key%, %value%
+		setting[key] := value
+	}
+}
+
+saveSetting(key:="") {
+	global setting
+	if (key) {
+		value := setting[key]
+		IniWrite, %value%, Setting.ini, Setting, %key%
+	} else {	
+		for key, value in setting {
+			IniWrite, %value%, Setting.ini, Setting, %key%
+		}
+	}
+}
+
+readFromLog(que) {
+	global LOG_FILE
+	
+	Loop, read, %LOG_FILE%, %LOG_FILE%~
+	{
+		StringSplit, q, A_LoopReadLine, %A_Tab%
+		if(q0 < 2)
+			continue
+		if(q1 < A_Now && !setting.outdated)
+			continue
+		FileAppend, %A_LoopReadLine%`n
+		o := {
+			title: q1,
+			endTime: q1
+		}
+		timerQue.insert(o)
+	}
+	FileDelete, %LOG_FILE%
+	FileMove, %LOG_FILE%~, %LOG_FILE%
+}
+
