@@ -143,66 +143,58 @@ ShowMainWindow:
 	return
 
 MakeWindow:
-Gui, TimerWindow:+LastFoundExist
-IfWinExist {
-	WinActivate
+	Gui, TimerWindow:+LastFoundExist
+	IfWinExist {
+		WinActivate
+		return
+	}
+	Gui, TimerWindow:New, -Caption +Border +LastFound, 開始一個新的計時器
+	Gui, Font,, 細明體
+	Gui, Add, Text,, 倒數計時器標題
+	Gui, Add, Edit, vtimeTitle r1 w120
+	Gui, Add, Text,, 輸入時間(時:分:秒)
+	Gui, Add, Edit, vtimeData r1 w120, 00:00:00
+	Gui, Add, Button, Default gCreateTimer, Start
+	Gui, Show
 	return
-}
-Gui, TimerWindow:New, -Caption +Border +LastFound, 開始一個新的計時器
-Gui, Font,, 細明體
-Gui, Add, Text,, 倒數計時器標題
-Gui, Add, Edit, vtimeTitle r1 w120
-Gui, Add, Text,, 輸入時間(時:分:秒)
-Gui, Add, Edit, vtimeData r1 w120, 00:00:00
-Gui, Add, Button, Default gCreateTimer, Start
-Gui, Show
-return
 
 TimerWindowClose:
 TimerWindowEscape:
-Gui, Destroy
-return
+	Gui, Destroy
+	return
 
 CreateTimer:
-Gui, Submit
-Gui, Destroy
-StringReplace, timeTitle, timeTitle, |, _, all
-if (timeData="" || timeData="00:00:00")
+	Gui, Submit
+	Gui, Destroy
+	
+	if (timeData="" || timeData="00:00:00") {
+		return
+	}
+	
+	; Parse title
+	StringReplace, timeTitle, timeTitle, |, _, all
+	
+	; Parse end time
+	endTime := timeAdd(A_Now, TimeData)
+	
+	; Create tip
+	tipMessage := fTip(timeTitle, endTime)
+	TrayTip, %timeTitle%, %tipMessage%
+	
+	o := {
+		title: timeTitle,
+		endTime: endTime
+	}
+	timerQue.Insert(o)
+	
+	Gui MainWindow: Default
+	LV_Add(0, timeTitle, fTime(endTime))
+	SetTimer, CheckTimer, On
+	writeToLog(timerQue)
 	return
-Hour:=0	;分析時間
-Minute:=0
-Second:=0
-StringSplit, t, TimeData, :
-i:=0
-ar:=[0,0,0]
-loop, %t0%
-{
-	ar[i]:=t%t0%
-	t0--
-	i++
-}
-Second:=ar[0]
-Minute:=ar[1]
-Hour:=ar[2]
-EndTime=%A_Now%
-EndTime+=Hour,H
-EndTime+=Minute,M
-EndTime+=Second,S	
-t:=fTip(timeTitle,endTime)
-TrayTip, %timeTitle%, %t%
-o := {
-	title: timeTitle,
-	endTime: endTime
-}
-timerQue.Insert(o)
-Gui 1: Default
-LV_Add(0,timeTitle,fTime(endTime))
-SetTimer, CheckTimer, On
-writeToLog(timerQue)
-return
 
 checkTimer:	;計時器
-if (! timerQue.MaxIndex())
+if (!timerQue.MaxIndex())
 {
 	setTimer, CheckTimer, Off
 	Menu, tray, tip, AHK Timer
@@ -411,3 +403,19 @@ fDeleteTimer(i,timerQue){
 	writeToLog(timerQue)
 }
 
+timeAdd(base, diff) {
+	StringSplit, diff, diff, :
+	len := diff0
+	ar := [0, 0, 0]
+	loop, %len% {
+		index := 3 - len + A_Index
+		ar[index] = diff%A_Index%
+	}
+	
+	base += ar[1], H
+	base += ar[2], M
+	base += ar[3], S
+	
+	return base
+}
+	
