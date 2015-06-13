@@ -4,13 +4,33 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-IniRead, globalHK, Setting.ini, Setting, hotKey, #t
-IniRead, firstRun, Setting.ini, Setting, firstRun, 1
-IniRead, beepSound, Setting.ini, Setting, beepSound, 1
-IniRead, usingPopup, Setting.ini, Setting, usingPopup, 1
-IniRead, usingOutdate, Setting.ini, Setting, usingOutdate, 0
-IniRead, placeAt, Setting.ini, Setting, placeAt, 5
-Hotkey, %globalHK%, MakeWindow
+setting := {
+	hotkey: "#t",
+	firstRun: true,
+	beepSound: true,
+	popup: true,
+	outdated: false,
+	placeAt: 5
+}
+
+loadSetting()
+
+loadSetting() {
+	global setting
+	for key, value in setting {
+		IniRead, value, Setting.ini, Setting, %key%, %value%
+		setting[key] := value
+	}
+}
+
+saveSetting() {
+	global setting
+	for key, value in setting {
+		IniWrite, %value%, Setting.ini, Setting, %key%
+	}
+}
+
+Hotkey, %setting.hotkey%, MakeWindow
 
 ;Make tray menu
 ifExist, Icon.ico
@@ -66,8 +86,7 @@ Gui, Add, Text, x16 y197 w440 h160 center, `n`n我的BLOG:`nhttp://eight04.blogs
 MainHWND:=WinExist()
 
 ;Initial
-if firstRun = 1
-{
+if (setting.firstRun) {
 	MsgBox, 4, 第一次執行,
 	(LTrim
 	第一次啟動, 此程式會執行在系統列！
@@ -80,11 +99,11 @@ if firstRun = 1
 }
 
 ;Initial setting
-GuiControl,, ghotkey, %GlobalHK%
-GuiControl,, usePopup, %usingPopup%
-GuiControl,, useBeep, %beepSound%
-GuiControl,, useOutdate, %usingOutdate%
-GuiControl, Disable, p%placeAt%
+GuiControl,, ghotkey, %setting.hotkey%
+GuiControl,, usePopup, %setting.popup%
+GuiControl,, useBeep, %setting.beepSound%
+GuiControl,, useOutdate, %setting.outdated%
+GuiControl, Disable, p%setting.placeAt%
 
 ;Initial timer
 Loop, read, tm.log, tm.log~
@@ -92,7 +111,7 @@ Loop, read, tm.log, tm.log~
 	StringSplit, q, A_LoopReadLine, %A_Tab%
 	if(q0 < 2)
 		continue
-	if(q1 < A_Now && !usingOutdate)
+	if(q1 < A_Now && !setting.outdated)
 		continue
 	FileAppend, %A_LoopReadLine%`n
 	o := new TimerItem(q2,q1)
@@ -143,10 +162,10 @@ sp:=9
 Goto, ChangeP
 
 ChangeP:
-GuiControl, Enable, p%placeAt%
+GuiControl, Enable, p%setting.placeAt%
 GuiControl, Disable, p%sp%
-placeAt:=sp
-iniWrite, %placeAt%, Setting.ini, Setting, placeAt
+setting.placeAt := sp
+iniWrite, %setting.placeAt%, Setting.ini, Setting, placeAt
 return
 
 DeleteTimer:
@@ -160,25 +179,23 @@ fDeleteTimer(i,timerQue){
 }
 
 SetHotkey:
-hk:=HotkeyGUI(0,globalHK,1,false,"設定快速鍵")	;HotkeyGUI Library
+hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
 if(hk="")
 	return
 iniWrite, %hk%, Setting.ini, Setting, hotkey
-hotkey, %globalHK%, MakeWindow, off
-globalHK:=hk
-hotkey, %globalHK%, MakeWindow, on
+hotkey, %setting.hotkey%, MakeWindow, off
+setting.hotkey := hk
+hotkey, %setting.hotkey%, MakeWindow, on
 Gui 1: default
 GuiControl,, ghotkey, %hk%
 return
 
 SaveSetting:
 Gui, Submit, Nohide
-usingPopup:=usePopup
-beepSound:=useBeep
-usingOutdate:=useOutdate
-iniWrite, %usingPopup%, Setting.ini, Setting, usingPopup
-iniWrite, %beepSound%, Setting.ini, Setting, beepSound
-iniWrite, %usingOutdate%, Setting.ini, Setting, usingOutdate
+setting.popup := usePopup
+setting.beepSound := useBeep
+setting.outdated := useOutdate
+saveSetting()
 return
 
 Exit:
@@ -321,15 +338,12 @@ LV_Selected:=A_EventInfo
 return
 
 Popup(title){
-	global beepSound	;在函式中用global關鍵字取得全域變數
-	global usingPopup
-	global placeAt
-	if beepSound = 1
+	global setting
+	if (setting.beepSound) {
 		SoundPlay, *48
-	if(usingPopup = 1)
-	{
-		loop, 99
-		{
+	}
+	if (setting.popup) {
+		loop, 99 {
 			if A_Index <= 2
 				continue
 			gui %A_Index%:+LastFoundExist
@@ -351,48 +365,39 @@ Popup(title){
 		Gui, Add, Button, gpopGuiClose, 我知道了
 		Gui, Show, noActivate, %title%
 		WinGetPos,,, w, h
-		if placeAt = 1
-		{
+		if (setting.placeAt = 1) {
 			x:=0
 			y:=0
 		}
-		if placeAt = 2
-		{
+		if (setting.placeAt = 2) {
 			x:=(screenWidth-w)/2
 			y:=0
 		}
-		if placeAt = 3
-		{
+		if (setting.placeAt = 3) {
 			x:=screenWidth-w
 			y:=0
 		}
-		if placeAt = 4
-		{
+		if (setting.placeAt = 4) {
 			x:=0
 			y:=(screenHeight-h)/2
 		}
-		if placeAt = 5
-		{
+		if (setting.placeAt = 5) {
 			x:=(screenWidth-w)/2
 			y:=(screenHeight-h)/2
 		}
-		if placeAt = 6
-		{
+		if (setting.placeAt = 6) {
 			x:=(screenWidth-w)
 			y:=(screenHeight-h)/2
 		}
-		if placeAt = 7
-		{
+		if (setting.placeAt = 7) {
 			x:=0
 			y:=(screenHeight-h)
 		}
-		if placeAt = 8
-		{
+		if (setting.placeAt = 8) {
 			x:=(screenWidth-w)/2
 			y:=(screenHeight-h)
 		}
-		if placeAt = 9
-		{
+		if (setting.placeAt = 9) {
 			x:=(screenWidth-w)
 			y:=(screenHeight-h)
 		}
