@@ -4,32 +4,33 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
+;Global Vars
+timerQue := Array()
+LOG_FILE := "timer.txt"
+ICON_FILE := "Icon.ico"
 setting := {
+(Join
 	hotkey: "#t",
 	firstRun: true,
-	beepSound: true,
+	beep: true,
 	popup: true,
 	outdated: false,
 	placeAt: 5
-}
+)}
 
 loadSetting()
 
-Hotkey, %setting.hotkey%, MakeWindow
+Hotkey, % setting.hotkey, MakeWindow
 
 ;Make tray menu
-ifExist, Icon.ico {
-	Menu, tray, Icon, Icon.ico
+If (FileExist(ICON_FILE)) {
+	Menu, tray, Icon, %ICON_FILE%
 }
 Menu, tray, tip, AHK Timer
 Menu, tray, noStandard
 Menu, tray, Add, 顯示視窗, ShowMainWindow
 Menu, tray, Add, 結束, Exit
 Menu, Tray, Default, 顯示視窗
-
-;Vars 
-timerQue := Array()
-LOG_FILE := "timer.txt"
 
 ;Timer
 SetTimer, CheckTimer, 1000	;每秒檢查一次
@@ -46,9 +47,9 @@ Gui, Tab, 功能設定
 Gui, Add, Text, x6 y37 w300 h20, 快速鍵:
 Gui, Add, Edit, x47 y33 w60 h20 vghotKey disabled right, 
 Gui, Add, Button, x146 y29 w100 h30 gSetHotkey, 設定快速鍵
-Gui, Add, CheckBox, x6 y67 w300 h30 vuseOutdate gSaveSetting, 使用過期的計時器
-Gui, Add, CheckBox, x6 y97 w300 h30 vusePopup gSaveSetting, 使用跳出視窗
-Gui, Add, CheckBox, x6 y127 w300 h30 vuseBeep gSaveSetting, 使用提示音
+Gui, Add, CheckBox, x6 y67 w300 h30 voutdated gSaveSetting, 使用過期的計時器
+Gui, Add, CheckBox, x6 y97 w300 h30 vpopup gSaveSetting, 使用跳出視窗
+Gui, Add, CheckBox, x6 y127 w300 h30 vbeep gSaveSetting, 使用提示音
 Gui, Add, Button, x322 y30 w40 h40 gChangeP vp1, ↖
 Gui, Add, Button, x372 y30 w40 h40 gChangeP vp2, ↑
 Gui, Add, Button, x422 y30 w40 h40 gChangeP vp3, ↗
@@ -61,6 +62,17 @@ Gui, Add, Button, x422 y130 w40 h40 gChangeP vp9, ↘
 Gui, Add, GroupBox, x6 y167 w460 h200, 關於
 Gui, Add, Text, x16 y197 w440 h160 center, `n`n我的BLOG:`nhttp://eight04.blogspot.com`n`n我的MAIL:`neight04@gmail.com
 
+;Initial ListView
+LV_ModifyCol(1, "310")
+LV_ModifyCol(2, "AutoHdr Right")
+
+;Initial setting
+GuiControl,, ghotkey, % setting.hotkey
+GuiControl,, popup, % setting.popup
+GuiControl,, beep, % setting.beep
+GuiControl,, outdated, % setting.outdated
+GuiControl, Disable, % "p" setting.placeAt
+
 ;Initial
 if (setting.firstRun) {
 	MsgBox, 4, 第一次執行,
@@ -70,41 +82,23 @@ if (setting.firstRun) {
 
 	需要再顯示這個提示嗎？
 	)
-	ifMsgBox No {
+	ifMsgBox, No, {
 		setting.firstRun := 0
 		saveSetting("firstRun")
 	}
 }
 
-;Initial setting
-GuiControl,, ghotkey, %setting.hotkey%
-GuiControl,, usePopup, %setting.popup%
-GuiControl,, useBeep, %setting.beepSound%
-GuiControl,, useOutdate, %setting.outdated%
-GuiControl, Disable, p%setting.placeAt%
-
 ;Initial timer
 readFromLog(timerQue)
-
-;Initial ListView
-For i,v in timerQue
-{
-	LV_Add(0, v.title, fTime(v.endTime))
-}
-LV_ModifyCol(1,"310")
-LV_ModifyCol(2,"AutoHdr Right")
-
-;Timer Start
-SetTimer, CheckTimer, On
 
 return
 
 ; ==================== Label and Functions ==================
 
 ChangeP:
-	GuiControl, Enable, p%setting.placeAt%
+	GuiControl, Enable, % "p" setting.placeAt
 	setting.placeAt := SubStr(A_GuiControl, 2)
-	GuiControl, Disable, p%setting.placeAt%
+	GuiControl, Disable, % "p" setting.placeAt
 	saveSetting("placeAt")
 	return
 
@@ -114,24 +108,22 @@ DeleteTimer:
 
 SetHotkey:
 	hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
-	if(hk="")
+	if (!hk) {
 		return
-	hotkey, %setting.hotkey%, MakeWindow, off
+	}
+	hotkey, % setting.hotkey, MakeWindow, off
 	setting.hotkey := hk
 	saveSetting("hotkey")
-	hotkey, %setting.hotkey%, MakeWindow, on
+	hotkey, % setting.hotkey, MakeWindow, on
 	Gui, MainWindow:Default
 	GuiControl,, ghotkey, %hk%
 	return
 
 SaveSetting:
-	Gui, Submit, Nohide
-	setting.popup := usePopup
-	setting.beepSound := useBeep
-	setting.outdated := useOutdate
-	saveSetting()
+	setting[A_GuiControl] := getGuiValue(A_GuiControl)
+	saveSetting(A_GuiControl)
 	return
-
+	
 Exit:
 	ExitApp
 	return
@@ -143,11 +135,12 @@ ShowMainWindow:
 
 MakeWindow:
 	Gui, TimerWindow:+LastFoundExist
-	IfWinExist {
+	IfWinExist
+	{
 		WinActivate
 		return
 	}
-	Gui, TimerWindow:New, -Caption +Border +LastFound, 開始一個新的計時器
+	Gui, TimerWindow:New, -Caption +Border +LastFound +LabelTimerWindow, 開始一個新的計時器
 	Gui, Font,, 細明體
 	Gui, Add, Text,, 倒數計時器標題
 	Gui, Add, Edit, vtimeTitle r1 w120
@@ -180,15 +173,7 @@ CreateTimer:
 	tipMessage := fTip(timeTitle, endTime)
 	TrayTip, %timeTitle%, %tipMessage%
 	
-	o := {
-		title: timeTitle,
-		endTime: endTime
-	}
-	timerQue.Insert(o)
-	
-	Gui MainWindow: Default
-	LV_Add(0, timeTitle, fTime(endTime))
-	SetTimer, CheckTimer, On
+	addTimer(timerQue, timeTitle, endTime)
 	writeToLog(timerQue)
 	return
 
@@ -200,28 +185,11 @@ checkTimer:	;計時器
 		return
 	}
 	
-	TipQ := ""
-	; Update tray tip, popup
-	For i, v in timerQue {
-		if (A_now > value.endTime) {
-			fDeleteTimer(i,timerQue)
-			Popup(v.title)
-		} else {
-			if (TipQ) {
-				TipQ .= "`n"
-			}
-			TipQ .= fTip(v.title, v.endTime)
-		}
-	}
-	Menu, tray, tip, %TipQ%
+	; Loop through timers...
+	loopTimerQue(timerQue)
 
 	; Modify TreeView
-	Gui, MainWindow: +LastFoundExist
-	ifWinExist {
-		For i,v in timerQue {
-			LV_Modify(i, "Col2", fTime(v.endTime))
-		}
-	}
+	updateListView(timerQue)
 	return
 	
 PopGuiEscape:
@@ -231,12 +199,34 @@ PopGuiClose:
 	
 ; ============================= Functions ============================
 
+readFromLog(que) {
+	global LOG_FILE
+	
+	args := []
+	Loop, read, %LOG_FILE%, %LOG_FILE%~
+	{
+		arr := StrSplit(A_LoopReadLine, "`t")
+		if (arr.Length() < 2) {
+			continue
+		}
+		if (arr[2] < A_Now && !setting.outdated) {
+			continue
+		}
+		FileAppend, %A_LoopReadLine%`n
+		args.push(arr[1], arr[2])
+	}
+	FileDelete, %LOG_FILE%
+	FileMove, %LOG_FILE%~, %LOG_FILE%
+	
+	addTimer(que, args*)
+}
+
 writeToLog(que){
 	global LOG_FILE
 	
 	FileDelete, %LOG_FILE%
 	For index, value in que {
-		line := value.endTime . "`t" . value.title "`n"
+		line := value.title "`t" value.endTime "`n"
 		FileAppend, %line%, %LOG_FILE%
 	}
 }
@@ -261,81 +251,53 @@ saveSetting(key:="") {
 	}
 }
 
-readFromLog(que) {
-	global LOG_FILE
-	
-	Loop, read, %LOG_FILE%, %LOG_FILE%~
-	{
-		StringSplit, q, A_LoopReadLine, %A_Tab%
-		if(q0 < 2)
-			continue
-		if(q1 < A_Now && !setting.outdated)
-			continue
-		FileAppend, %A_LoopReadLine%`n
-		o := {
-			title: q1,
-			endTime: q1
-		}
-		timerQue.insert(o)
-	}
-	FileDelete, %LOG_FILE%
-	FileMove, %LOG_FILE%~, %LOG_FILE%
+fDeleteTimer(index, que) {
+	Gui, MainWindow:Default
+	que.remove(index)
+	LV_Delete(index)
 }
 
-fDeleteTimer(i,timerQue){
-	timerQue.remove(i)
-	LV_Delete(i)
-	writeToLog(timerQue)
-}
-
-timeAdd(base, diff) {
-	StringSplit, diff, diff, :
-	len := diff0
-	ar := [0, 0, 0]
-	loop, %len% {
-		index := 3 - len + A_Index
-		ar[index] = diff%A_Index%
+timeAdd(baseTime, diff) {
+	arr := StrSplit(diff, ":")
+	Loop, % 3 - arr.Length() {
+		arr.InsertAt(0, 0)
 	}
 	
-	base += ar[1], H
-	base += ar[2], M
-	base += ar[3], S
+	baseTime += arr[1], H
+	baseTime += arr[2], M
+	baseTime += arr[3], S
 	
-	return base
+	return baseTime
+}
+
+time2Arr(endTime) {
+	T := A_Now
+	h := endTime
+	h -= T, H
+	m := endTime
+	m -= T, M
+	m := mod(m, 60)
+	s := endTime
+	s -= T, S
+	s := mod(s, 60)
+	return [h, m, s]
 }
 	
 ; Format tray tip
-fTip(title,endTime){
-	T:=A_Now
-	h:=endTime
-	h-=T,H
-	m:=endTime
-	m-=T,M
-	m:=mod(m,60)
-	s:=endTime
-	s-=T,S
-	s:=mod(s,60)
-	return title . " 還剩 " . h . " 時 " . m . " 分 " . s . "秒"
+fTip(title, endTime) {
+	arr := time2Arr(endTime)
+	return title " 還剩 " arr[1] " 時 " arr[2] " 分 " arr[3] " 秒"
 }
 
 ; Format time
-fTime(endTime){
-	T:=A_Now
-	h:=endTime
-	h-=T,H
-	if ( h < 10 )
-		h = 0%h%
-	m:=endTime
-	m-=T,M
-	m:=mod(m,60)
-	if ( m < 10 )
-		m = 0%m%
-	s:=endTime
-	s-=T,S
-	s:=mod(s,60)
-	if ( s < 10 )
-		s = 0%s%
-	return h . ":" . m . ":" . s
+fTime(endTime) {
+	arr := time2Arr(endTime)
+	for key, value in arr {
+		if (value < 10) {
+			arr[key] := "0" value
+		}
+	}
+	return arr[1] ":" arr[2] ":" arr[3]
 }
 
 Popup(title) {
@@ -383,8 +345,66 @@ Popup(title) {
 		TrayTip, %title%, %title% 時間到了！
 	}
 	
-	if (setting.beepSound) {
+	if (setting.beep) {
 		SoundPlay, *48
 	}
 }
 
+getGuiValue(key) {
+	GuiControlGet, value,, %key%
+	return value
+}
+
+loopTimerQue(que) {
+	TipQ := ""
+	deleteFlag := false
+	
+	; Update tray tip, popup
+	For index, value in que {
+		if (A_Now > value.endTime) {
+			fDeleteTimer(index, que)
+			Popup(value.title)
+			deleteFlag := true
+		} else {
+			if (TipQ) {
+				TipQ .= "`n"
+			}
+			TipQ .= fTip(value.title, value.endTime)
+		}
+	}
+	
+	if (deleteFlag) {
+		writeToLog(que)
+	}
+
+	Menu, tray, tip, %TipQ%
+}
+
+updateListView(que) {
+	Gui, MainWindow:Default
+	Gui, +LastFoundExist
+	ifWinNotExist
+	{
+		return
+	}
+	for index, value in que {
+		LV_Modify(index, "Col2", fTime(value.endTime))
+	}
+}
+
+addTimer(que, args*) {
+	Gui, MainWindow:Default
+	index := 1
+	len := args.Length()
+	while (index < len) {
+		item := {
+		(Join
+			title: args[index],
+			endTime: args[index + 1]
+		)}
+		que.Push(item)
+		LV_Add(, item.title, fTime(item.endTime))
+		index += 2
+	}
+	SetTimer, CheckTimer, On
+}
