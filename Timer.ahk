@@ -38,8 +38,9 @@ saveSetting(key:="") {
 Hotkey, %setting.hotkey%, MakeWindow
 
 ;Make tray menu
-ifExist, Icon.ico
+ifExist, Icon.ico {
 	Menu, tray, Icon, Icon.ico
+}
 Menu, tray, tip, AHK Timer
 Menu, tray, noStandard
 Menu, tray, Add, 顯示視窗, ShowMainWindow
@@ -47,13 +48,6 @@ Menu, tray, Add, 結束, Exit
 Menu, Tray, Default, 顯示視窗
 
 ;Vars 
-class TimerItem
-{
-	__New(title,endTime){
-		this.title:=title
-		this.endTime:=endTime
-	}
-}
 timerQue:=Array()
 LV_Selected:=0
 
@@ -121,7 +115,10 @@ Loop, read, tm.log, tm.log~
 	if(q1 < A_Now && !setting.outdated)
 		continue
 	FileAppend, %A_LoopReadLine%`n
-	o := new TimerItem(q2,q1)
+	o := {
+		title: q1,
+		endTime: q1
+	}
 	timerQue.insert(o)
 }
 FileDelete, tm.log
@@ -263,7 +260,10 @@ EndTime+=Minute,M
 EndTime+=Second,S	
 t:=fTip(timeTitle,endTime)
 TrayTip, %timeTitle%, %t%
-o:=new TimerItem(timeTitle, endTime)
+o := {
+	title: timeTitle,
+	endTime: endTime
+}
 timerQue.Insert(o)
 Gui 1: Default
 LV_Add(0,timeTitle,fTime(endTime))
