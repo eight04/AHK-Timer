@@ -103,71 +103,63 @@ return
 ; ==================== Label and Functions ==================
 
 ChangeP:
-GuiControl, Enable, p%setting.placeAt%
-setting.placeAt := SubStr(A_GuiControl, 2)
-GuiControl, Disable, p%setting.placeAt%
-saveSetting("placeAt")
-return
+	GuiControl, Enable, p%setting.placeAt%
+	setting.placeAt := SubStr(A_GuiControl, 2)
+	GuiControl, Disable, p%setting.placeAt%
+	saveSetting("placeAt")
+	return
 
 DeleteTimer:
-fDeleteTimer(LV_GetNext(),timerQue)
-return
-
-fDeleteTimer(i,timerQue){
-	timerQue.remove(i)
-	LV_Delete(i)
-	writeToLog(timerQue)
-}
+	fDeleteTimer(LV_GetNext(),timerQue)
+	return
 
 SetHotkey:
-hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
-if(hk="")
+	hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
+	if(hk="")
+		return
+	hotkey, %setting.hotkey%, MakeWindow, off
+	setting.hotkey := hk
+	saveSetting("hotkey")
+	hotkey, %setting.hotkey%, MakeWindow, on
+	Gui, MainWindow:Default
+	GuiControl,, ghotkey, %hk%
 	return
-hotkey, %setting.hotkey%, MakeWindow, off
-setting.hotkey := hk
-saveSetting("hotkey")
-hotkey, %setting.hotkey%, MakeWindow, on
-Gui 1: default
-GuiControl,, ghotkey, %hk%
-return
 
 SaveSetting:
-Gui, Submit, Nohide
-setting.popup := usePopup
-setting.beepSound := useBeep
-setting.outdated := useOutdate
-saveSetting()
-return
+	Gui, Submit, Nohide
+	setting.popup := usePopup
+	setting.beepSound := useBeep
+	setting.outdated := useOutdate
+	saveSetting()
+	return
 
 Exit:
-ExitApp
-return
+	ExitApp
+	return
 
 ShowMainWindow:
-Gui, MainWindow:Default
-Gui, show, h376 w475, AHK Timer
-return
+	Gui, MainWindow:Default
+	Gui, show, h376 w475, AHK Timer
+	return
 
 MakeWindow:
-Gui 2:Default
-Gui, +LastFoundExist
-IfWinExist
-{
+Gui, TimerWindow:+LastFoundExist
+IfWinExist {
 	WinActivate
 	return
 }
-Gui, -Caption +Border +LastFound +LabelCTimerWindow
+Gui, TimerWindow:New, -Caption +Border +LastFound, 開始一個新的計時器
 Gui, Font,, 細明體
 Gui, Add, Text,, 倒數計時器標題
 Gui, Add, Edit, vtimeTitle r1 w120
 Gui, Add, Text,, 輸入時間(時:分:秒)
 Gui, Add, Edit, vtimeData r1 w120, 00:00:00
 Gui, Add, Button, Default gCreateTimer, Start
-Gui, Show,, 開始一個新的計時器
+Gui, Show
 return
 
-CTimerWindowClose:
-CTimerWindowEscape:
+TimerWindowClose:
+TimerWindowEscape:
 Gui, Destroy
 return
 
@@ -411,5 +403,11 @@ readFromLog(que) {
 	}
 	FileDelete, %LOG_FILE%
 	FileMove, %LOG_FILE%~, %LOG_FILE%
+}
+
+fDeleteTimer(i,timerQue){
+	timerQue.remove(i)
+	LV_Delete(i)
+	writeToLog(timerQue)
 }
 
