@@ -50,6 +50,7 @@ Menu, Tray, Default, 顯示視窗
 ;Vars 
 timerQue := Array()
 LV_Selected := 0
+LOG_FILE := "timer.txt"
 
 ;Timer
 SetTimer, CheckTimer, 1000	;每秒檢查一次
@@ -104,22 +105,28 @@ GuiControl,, useOutdate, %setting.outdated%
 GuiControl, Disable, p%setting.placeAt%
 
 ;Initial timer
-Loop, read, tm.log, tm.log~
-{
-	StringSplit, q, A_LoopReadLine, %A_Tab%
-	if(q0 < 2)
-		continue
-	if(q1 < A_Now && !setting.outdated)
-		continue
-	FileAppend, %A_LoopReadLine%`n
-	o := {
-		title: q1,
-		endTime: q1
+readFromLog(timerQue)
+
+readFromLog(que) {
+	global LOG_FILE
+	
+	Loop, read, %LOG_FILE%, %LOG_FILE%~
+	{
+		StringSplit, q, A_LoopReadLine, %A_Tab%
+		if(q0 < 2)
+			continue
+		if(q1 < A_Now && !setting.outdated)
+			continue
+		FileAppend, %A_LoopReadLine%`n
+		o := {
+			title: q1,
+			endTime: q1
+		}
+		timerQue.insert(o)
 	}
-	timerQue.insert(o)
+	FileDelete, %LOG_FILE%
+	FileMove, %LOG_FILE%~, %LOG_FILE%
 }
-FileDelete, tm.log
-FileMove, tm.log~, tm.log
 
 ;Initial ListView
 For i,v in timerQue
@@ -422,13 +429,12 @@ PopGuiClose:
 Gui, Destroy
 return
 
-writeToLog(q){
-	For i,v in q
-	{
-		t:=v.title
-		s:=v.endTime
-		FileAppend, %s%`t%t%`n, tm.log~
+writeToLog(que){
+	global LOG_FILE
+	
+	FileDelete, %LOG_FILE%
+	For index, value in que {
+		line := value.endTime . "`t" . value.title "`n"
+		FileAppend, %line%, %LOG_FILE%
 	}
-	FileDelete, tm.log
-	FileMove, tm.log~, tm.log
 }
