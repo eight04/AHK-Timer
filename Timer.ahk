@@ -48,15 +48,15 @@ Menu, tray, Add, 結束, Exit
 Menu, Tray, Default, 顯示視窗
 
 ;Vars 
-timerQue:=Array()
-LV_Selected:=0
+timerQue := Array()
+LV_Selected := 0
 
 ;Timer
 SetTimer, CheckTimer, 1000	;每秒檢查一次
 SetTimer, CheckTimer, Off
 
 ;MainWindow
-Gui, +LabelMainWindow +LastFound
+Gui, MainWindow: New, +LastFound, AHK Timer
 Gui, Add, Tab, x-4 y-0 w480 h380 , 計時器管理|功能設定
 Gui, font, s14, 微軟正黑體
 Gui, Add, ListView, x6 y30 w462 h304 vtmList -Multi NoSortHdr, 計時器標題|剩餘時間
@@ -207,6 +207,7 @@ ExitApp
 return
 
 ShowMainWindow:
+Gui, MainWindow:Default
 Gui, show, h376 w475, AHK Timer
 return
 
