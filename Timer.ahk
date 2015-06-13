@@ -29,7 +29,6 @@ Menu, Tray, Default, 顯示視窗
 
 ;Vars 
 timerQue := Array()
-LV_Selected := 0
 LOG_FILE := "timer.txt"
 
 ;Timer
@@ -110,7 +109,7 @@ ChangeP:
 	return
 
 DeleteTimer:
-	fDeleteTimer(LV_GetNext(),timerQue)
+	fDeleteTimer(LV_GetNext(), timerQue)
 	return
 
 SetHotkey:
@@ -225,123 +224,12 @@ checkTimer:	;計時器
 	}
 	return
 	
-; Format tray tip
-fTip(title,endTime){
-	T:=A_Now
-	h:=endTime
-	h-=T,H
-	m:=endTime
-	m-=T,M
-	m:=mod(m,60)
-	s:=endTime
-	s-=T,S
-	s:=mod(s,60)
-	return title . " 還剩 " . h . " 時 " . m . " 分 " . s . "秒"
-}
-
-; Format time
-fTime(endTime){
-	T:=A_Now
-	h:=endTime
-	h-=T,H
-	if ( h < 10 )
-		h = 0%h%
-	m:=endTime
-	m-=T,M
-	m:=mod(m,60)
-	if ( m < 10 )
-		m = 0%m%
-	s:=endTime
-	s-=T,S
-	s:=mod(s,60)
-	if ( s < 10 )
-		s = 0%s%
-	return h . ":" . m . ":" . s
-}
-
-selectL:
-	LV_Selected := A_EventInfo
-	return
-
-Popup(title){
-	global setting
-	if (setting.beepSound) {
-		SoundPlay, *48
-	}
-	if (setting.popup) {
-		loop, 99 {
-			if A_Index <= 2
-				continue
-			gui %A_Index%:+LastFoundExist
-			IfWinNotExist
-			{
-				Gui %A_Index%: default
-				Break
-			}
-		}
-		SysGet, ScreenWidth, 16
-		SysGet, ScreenHeight, 17
-		SysGet, gCaption, 4
-		screenHeight := ScreenHeight + gCaption - 20
-		screenWidth := screenWidth - 20
-		Gui +AlwaysOnTop +ToolWindow +LabelPopGui +LastFound
-		Gui, Font, s12, 細明體
-		Gui, margin, 15, 12
-		Gui, Add, Text,, %title%時間到啦！
-		Gui, Add, Button, gpopGuiClose, 我知道了
-		Gui, Show, noActivate, %title%
-		WinGetPos,,, w, h
-		if (setting.placeAt = 1) {
-			x:=0
-			y:=0
-		}
-		if (setting.placeAt = 2) {
-			x:=(screenWidth-w)/2
-			y:=0
-		}
-		if (setting.placeAt = 3) {
-			x:=screenWidth-w
-			y:=0
-		}
-		if (setting.placeAt = 4) {
-			x:=0
-			y:=(screenHeight-h)/2
-		}
-		if (setting.placeAt = 5) {
-			x:=(screenWidth-w)/2
-			y:=(screenHeight-h)/2
-		}
-		if (setting.placeAt = 6) {
-			x:=(screenWidth-w)
-			y:=(screenHeight-h)/2
-		}
-		if (setting.placeAt = 7) {
-			x:=0
-			y:=(screenHeight-h)
-		}
-		if (setting.placeAt = 8) {
-			x:=(screenWidth-w)/2
-			y:=(screenHeight-h)
-		}
-		if (setting.placeAt = 9) {
-			x:=(screenWidth-w)
-			y:=(screenHeight-h)
-		}
-		x:=x+10
-		y:=y+10
-		WinMove x,y
-	}
-	else
-	{
-		TrayTip, %title%, %title% 時間到了！
-	}
-	return
-}
-
 PopGuiEscape:
 PopGuiClose:
-Gui, Destroy
-return
+	Gui, Destroy
+	return
+	
+; ============================= Functions ============================
 
 writeToLog(que){
 	global LOG_FILE
@@ -416,3 +304,87 @@ timeAdd(base, diff) {
 	return base
 }
 	
+; Format tray tip
+fTip(title,endTime){
+	T:=A_Now
+	h:=endTime
+	h-=T,H
+	m:=endTime
+	m-=T,M
+	m:=mod(m,60)
+	s:=endTime
+	s-=T,S
+	s:=mod(s,60)
+	return title . " 還剩 " . h . " 時 " . m . " 分 " . s . "秒"
+}
+
+; Format time
+fTime(endTime){
+	T:=A_Now
+	h:=endTime
+	h-=T,H
+	if ( h < 10 )
+		h = 0%h%
+	m:=endTime
+	m-=T,M
+	m:=mod(m,60)
+	if ( m < 10 )
+		m = 0%m%
+	s:=endTime
+	s-=T,S
+	s:=mod(s,60)
+	if ( s < 10 )
+		s = 0%s%
+	return h . ":" . m . ":" . s
+}
+
+Popup(title) {
+	global setting
+	if (setting.popup) {
+		Gui, New, +AlwaysOnTop +ToolWindow +LabelPopGui +LastFound, %title%
+		Gui, Font, s12, 細明體
+		Gui, margin, 15, 12
+		Gui, Add, Text,, %title%時間到啦！
+		Gui, Add, Button, gpopGuiClose, 我知道了
+		WinSet, Transparent, 0
+		Gui, Show, noActivate, %title%
+		
+		SysGet, ScreenWidth, 16
+		SysGet, ScreenHeight, 17
+		SysGet, gCaption, 4
+		screenHeight := ScreenHeight + gCaption - 20
+		screenWidth := screenWidth - 20
+		WinGetPos,,, w, h
+		
+		if (setting.placeAt <= 3) {
+			y := 0
+		} else if (setting.placeAt <= 6) {
+			y := (screenHeight - h) / 2
+		} else {
+			y := (screenHeight - h)
+		}
+		
+		col := Mod(setting.placeAt, 3)
+		if (col = 1) {
+			x := 0
+		} else if (col = 2) {
+			x := (screenWidth - w) / 2
+		} else {
+			x := screenWidth - w
+		}
+		
+		x += 10
+		y += 10
+		
+		WinMove x, y
+		WinSet, Transparent, OFF
+		
+	} else {
+		TrayTip, %title%, %title% 時間到了！
+	}
+	
+	if (setting.beepSound) {
+		SoundPlay, *48
+	}
+}
+
