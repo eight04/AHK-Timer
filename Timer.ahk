@@ -81,9 +81,6 @@ Gui, Add, Button, x422 y130 w40 h40 gP9 vp9, ↘
 Gui, Add, GroupBox, x6 y167 w460 h200, 關於
 Gui, Add, Text, x16 y197 w440 h160 center, `n`n我的BLOG:`nhttp://eight04.blogspot.com`n`n我的MAIL:`neight04@gmail.com
 
-;Get MainHWND
-MainHWND:=WinExist()
-
 ;Initial
 if (setting.firstRun) {
 	MsgBox, 4, 第一次執行,
@@ -299,8 +296,8 @@ For i,v in timerQue
 Menu, tray, tip, %TipQ%
 
 ;Modify TreeView
-ifWinExist, AHK_ID %MainHWND%
-{
+Gui, MainWindow: +LastFoundExist
+ifWinExist {
 	For i,v in timerQue
 	{
 		LV_Modify(i,"Col2",fTime(v.endTime))
