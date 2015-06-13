@@ -23,10 +23,15 @@ loadSetting() {
 	}
 }
 
-saveSetting() {
+saveSetting(key:="") {
 	global setting
-	for key, value in setting {
+	if (key) {
+		value := setting[key]
 		IniWrite, %value%, Setting.ini, Setting, %key%
+	} else {	
+		for key, value in setting {
+			IniWrite, %value%, Setting.ini, Setting, %key%
+		}
 	}
 }
 
@@ -94,8 +99,10 @@ if (setting.firstRun) {
 
 	需要再顯示這個提示嗎？
 	)
-	ifMsgBox No
-		IniWrite, 0, Setting.ini, Setting, firstRun
+	ifMsgBox No {
+		setting.firstRun := 0
+		saveSetting("firstRun")
+	}
 }
 
 ;Initial setting
@@ -165,7 +172,7 @@ ChangeP:
 GuiControl, Enable, p%setting.placeAt%
 GuiControl, Disable, p%sp%
 setting.placeAt := sp
-iniWrite, %setting.placeAt%, Setting.ini, Setting, placeAt
+saveSetting("placeAt")
 return
 
 DeleteTimer:
@@ -182,9 +189,9 @@ SetHotkey:
 hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
 if(hk="")
 	return
-iniWrite, %hk%, Setting.ini, Setting, hotkey
 hotkey, %setting.hotkey%, MakeWindow, off
 setting.hotkey := hk
+saveSetting("hotkey")
 hotkey, %setting.hotkey%, MakeWindow, on
 Gui 1: default
 GuiControl,, ghotkey, %hk%
