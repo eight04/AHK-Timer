@@ -1,5 +1,4 @@
 ﻿#SingleInstance Force
-#MaxThreadsPerHotkey 1
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
@@ -45,7 +44,7 @@ Gui, font,
 Gui, Add, Button, x356 y340 w100 h30 gDeleteTimer, 刪除此計時器
 Gui, Tab, 功能設定
 Gui, Add, Text, x6 y37 w300 h20, 快速鍵:
-Gui, Add, Edit, x47 y33 w60 h20 vghotKey disabled right, 
+Gui, Add, Edit, x47 y33 w60 h20 vghotKey disabled right,
 Gui, Add, Button, x146 y29 w100 h30 gSetHotkey, 設定快速鍵
 Gui, Add, CheckBox, x6 y67 w300 h30 voutdated gSaveSetting, 使用過期的計時器
 Gui, Add, CheckBox, x6 y97 w300 h30 vpopup gSaveSetting, 使用跳出視窗
@@ -123,7 +122,7 @@ SaveSetting:
 	setting[A_GuiControl] := getGuiValue(A_GuiControl)
 	saveSetting(A_GuiControl)
 	return
-	
+
 Exit:
 	ExitApp
 	return
@@ -158,21 +157,21 @@ TimerWindowEscape:
 CreateTimer:
 	Gui, Submit
 	Gui, Destroy
-	
+
 	if (timeData="" || timeData="00:00:00") {
 		return
 	}
-	
+
 	; Parse title
 	StringReplace, timeTitle, timeTitle, |, _, all
-	
+
 	; Parse end time
 	endTime := timeAdd(A_Now, TimeData)
-	
+
 	; Create tip
 	tipMessage := fTip(timeTitle, endTime)
 	TrayTip, %timeTitle%, %tipMessage%
-	
+
 	addTimer(timerQue, timeTitle, endTime)
 	writeToLog(timerQue)
 	return
@@ -184,24 +183,24 @@ checkTimer:	;計時器
 		Menu, tray, tip, AHK Timer
 		return
 	}
-	
+
 	; Loop through timers...
 	loopTimerQue(timerQue)
 
 	; Modify TreeView
 	updateListView(timerQue)
 	return
-	
+
 PopGuiEscape:
 PopGuiClose:
 	Gui, Destroy
 	return
-	
+
 ; ============================= Functions ============================
 
 readFromLog(que) {
 	global LOG_FILE
-	
+
 	args := []
 	Loop, read, %LOG_FILE%, %LOG_FILE%~
 	{
@@ -217,13 +216,13 @@ readFromLog(que) {
 	}
 	FileDelete, %LOG_FILE%
 	FileMove, %LOG_FILE%~, %LOG_FILE%
-	
+
 	addTimer(que, args*)
 }
 
 writeToLog(que){
 	global LOG_FILE
-	
+
 	FileDelete, %LOG_FILE%
 	For index, value in que {
 		line := value.title "`t" value.endTime "`n"
@@ -244,7 +243,7 @@ saveSetting(key:="") {
 	if (key) {
 		value := setting[key]
 		IniWrite, %value%, Setting.ini, Setting, %key%
-	} else {	
+	} else {
 		for key, value in setting {
 			IniWrite, %value%, Setting.ini, Setting, %key%
 		}
@@ -262,11 +261,11 @@ timeAdd(baseTime, diff) {
 	Loop, % 3 - arr.Length() {
 		arr.InsertAt(0, 0)
 	}
-	
+
 	baseTime += arr[1], H
 	baseTime += arr[2], M
 	baseTime += arr[3], S
-	
+
 	return baseTime
 }
 
@@ -282,7 +281,7 @@ time2Arr(endTime) {
 	s := mod(s, 60)
 	return [h, m, s]
 }
-	
+
 ; Format tray tip
 fTip(title, endTime) {
 	arr := time2Arr(endTime)
@@ -310,14 +309,14 @@ Popup(title) {
 		Gui, Add, Button, gpopGuiClose, 我知道了
 		WinSet, Transparent, 0
 		Gui, Show, noActivate, %title%
-		
+
 		SysGet, ScreenWidth, 16
 		SysGet, ScreenHeight, 17
 		SysGet, gCaption, 4
 		screenHeight := ScreenHeight + gCaption - 20
 		screenWidth := screenWidth - 20
 		WinGetPos,,, w, h
-		
+
 		if (setting.placeAt <= 3) {
 			y := 0
 		} else if (setting.placeAt <= 6) {
@@ -325,7 +324,7 @@ Popup(title) {
 		} else {
 			y := (screenHeight - h)
 		}
-		
+
 		col := Mod(setting.placeAt, 3)
 		if (col = 1) {
 			x := 0
@@ -334,17 +333,17 @@ Popup(title) {
 		} else {
 			x := screenWidth - w
 		}
-		
+
 		x += 10
 		y += 10
-		
+
 		WinMove x, y
 		WinSet, Transparent, OFF
-		
+
 	} else {
 		TrayTip, %title%, %title% 時間到了！
 	}
-	
+
 	if (setting.beep) {
 		SoundPlay, *48
 	}
@@ -358,7 +357,7 @@ getGuiValue(key) {
 loopTimerQue(que) {
 	TipQ := ""
 	deleteFlag := false
-	
+
 	; Update tray tip, popup
 	For index, value in que {
 		if (A_Now > value.endTime) {
@@ -372,7 +371,7 @@ loopTimerQue(que) {
 			TipQ .= fTip(value.title, value.endTime)
 		}
 	}
-	
+
 	if (deleteFlag) {
 		writeToLog(que)
 	}
