@@ -211,9 +211,9 @@ readFromLog(que) {
 		if (arr.Length() < 2) {
 			continue
 		}
-		if (arr[2] < A_Now && !setting.outdated) {
-			continue
-		}
+		; if (arr[2] < A_Now && !setting.outdated) {
+			; continue
+		; }
 		FileAppend, %A_LoopReadLine%`n
 		args.push(arr[1], arr[2], arr[3])
 	}
@@ -363,8 +363,12 @@ loopTimerQue(que) {
 
 	; Update tray tip, popup
 	For index, value in que {
-		if (A_Now > value.endTime) {
-			Popup(value.title)
+		if (A_Now >= value.endTime) {
+			diff := A_Now
+			diff -= value.endTime, S
+			if (setting.outdated || diff < 5) {
+				Popup(value.title)
+			}
 			newEndTime := timeAdd(value.endTime, value.repeat)
 			if (value.endTime = newEndTime) {
 				fDeleteTimer(index, que)

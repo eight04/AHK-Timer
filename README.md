@@ -5,7 +5,8 @@ A countdown timer app written in AutoHotkey.
 Features
 --------
 * Create multiple countdown timer.
-* Use global hotkey.
+* Use global hotkey to create timer.
+* Call the timer repeatly with specified period.
 
 Todos
 -----
