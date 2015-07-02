@@ -133,6 +133,7 @@ ShowMainWindow:
 	return
 
 MakeWindow:
+	; Create timer window
 	Gui, TimerWindow:+LastFoundExist
 	IfWinExist
 	{
@@ -145,6 +146,8 @@ MakeWindow:
 	Gui, Add, Edit, vtimeTitle r1 w120
 	Gui, Add, Text,, 輸入時間(時:分:秒)
 	Gui, Add, Edit, vtimeData r1 w120, 00:00:00
+	Gui, Add, Text,, 重覆執行(時:分:秒)
+	Gui, Add, Edit, vtimeRepeat r1 w120, 00:00:00
 	Gui, Add, Button, Default gCreateTimer, Start
 	Gui, Show
 	return
@@ -172,7 +175,7 @@ CreateTimer:
 	tipMessage := fTip(timeTitle, endTime)
 	TrayTip, %timeTitle%, %tipMessage%
 
-	addTimer(timerQue, timeTitle, endTime)
+	addTimer(timerQue, timeTitle, endTime, timeRepeat)
 	writeToLog(timerQue)
 	return
 
@@ -212,7 +215,7 @@ readFromLog(que) {
 			continue
 		}
 		FileAppend, %A_LoopReadLine%`n
-		args.push(arr[1], arr[2])
+		args.push(arr[1], arr[2], arr[3])
 	}
 	FileDelete, %LOG_FILE%
 	FileMove, %LOG_FILE%~, %LOG_FILE%
@@ -225,7 +228,7 @@ writeToLog(que){
 
 	FileDelete, %LOG_FILE%
 	For index, value in que {
-		line := value.title "`t" value.endTime "`n"
+		line := value.title "`t" value.endTime "`t" value.repeat "`n"
 		FileAppend, %line%, %LOG_FILE%
 	}
 }
@@ -356,14 +359,19 @@ getGuiValue(key) {
 
 loopTimerQue(que) {
 	TipQ := ""
-	deleteFlag := false
+	saveFlag := false
 
 	; Update tray tip, popup
 	For index, value in que {
 		if (A_Now > value.endTime) {
-			fDeleteTimer(index, que)
 			Popup(value.title)
-			deleteFlag := true
+			newEndTime := timeAdd(value.endTime, value.repeat)
+			if (value.endTime = newEndTime) {
+				fDeleteTimer(index, que)
+			} else {
+				value.endTime := newEndTime
+			}
+			saveFlag := true
 		} else {
 			if (TipQ) {
 				TipQ .= "`n"
@@ -372,7 +380,7 @@ loopTimerQue(que) {
 		}
 	}
 
-	if (deleteFlag) {
+	if (saveFlag) {
 		writeToLog(que)
 	}
 
@@ -399,11 +407,12 @@ addTimer(que, args*) {
 		item := {
 		(Join
 			title: args[index],
-			endTime: args[index + 1]
+			endTime: args[index + 1],
+			repeat: args[index + 2]
 		)}
 		que.Push(item)
 		LV_Add(, item.title, fTime(item.endTime))
-		index += 2
+		index += 3
 	}
 	SetTimer, CheckTimer, On
 }
