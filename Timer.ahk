@@ -358,8 +358,8 @@ getGuiValue(key) {
 }
 
 loopTimerQue(que) {
-	TipQ := ""
 	saveFlag := false
+	nearest := false
 
 	; Update tray tip, popup
 	For index, value in que {
@@ -376,11 +376,9 @@ loopTimerQue(que) {
 				value.endTime := newEndTime
 			}
 			saveFlag := true
-		} else {
-			if (TipQ) {
-				TipQ .= "`n"
-			}
-			TipQ .= fTip(value.title, value.endTime)
+
+		} else if (!nearest || value.endTime < nearest.endTime) {
+			nearest := value
 		}
 	}
 
@@ -388,6 +386,7 @@ loopTimerQue(que) {
 		writeToLog(que)
 	}
 
+	TipQ := fTip(nearest.title, nearest.endTime)
 	Menu, tray, tip, %TipQ%
 }
 
