@@ -359,7 +359,8 @@ getGuiValue(key) {
 
 loopTimerQue(que) {
 	saveFlag := false
-	nearest := false
+	; nearest := false
+	tipQ := ""
 
 	; Update tray tip, popup
 	For index, value in que {
@@ -370,15 +371,17 @@ loopTimerQue(que) {
 				Popup(value.title)
 			}
 			newEndTime := timeAdd(value.endTime, value.repeat)
-			if (value.endTime = newEndTime) {
-				fDeleteTimer(index, que)
-			} else {
-				value.endTime := newEndTime
+			fDeleteTimer(index, que)
+			if (value.endTime != newEndTime) {
+				addTimer(que, value.title, newEndTime, value.repeat)
 			}
 			saveFlag := true
 
-		} else if (!nearest || value.endTime < nearest.endTime) {
-			nearest := value
+		} else if (index <= 3) {
+			if (index > 1) {
+				tipQ .= "`n"
+			}
+			tipQ .= fTip(value.title, value.endTime)
 		}
 	}
 
@@ -386,8 +389,7 @@ loopTimerQue(que) {
 		writeToLog(que)
 	}
 
-	TipQ := fTip(nearest.title, nearest.endTime)
-	Menu, tray, tip, %TipQ%
+	Menu, tray, tip, %tipQ%
 }
 
 updateListView(que) {
@@ -402,6 +404,16 @@ updateListView(que) {
 	}
 }
 
+queAdd(que, item) {
+	for key, value in que {
+		if (value.endTime > item.endTime) {
+			que.InsertAt(key, item)
+			return
+		}
+	}
+	que.Push(item)
+}
+
 addTimer(que, args*) {
 	Gui, MainWindow:Default
 	index := 1
@@ -413,7 +425,7 @@ addTimer(que, args*) {
 			endTime: args[index + 1],
 			repeat: args[index + 2]
 		)}
-		que.Push(item)
+		queAdd(que, item)
 		LV_Add(, item.title, fTime(item.endTime))
 		index += 3
 	}
