@@ -255,7 +255,7 @@ saveSetting(key:="") {
 
 fDeleteTimer(index, que) {
 	Gui, MainWindow:Default
-	que.remove(index)
+	que.RemoveAt(index)
 	LV_Delete(index)
 }
 
@@ -359,30 +359,42 @@ getGuiValue(key) {
 
 loopTimerQue(que) {
 	saveFlag := false
-	; nearest := false
 	tipQ := ""
+	readd := []
+	i := 1
 
 	; Update tray tip, popup
-	For index, value in que {
-		if (A_Now >= value.endTime) {
+	loop {
+		if (i > que.Length()) {
+			break
+		}
+		item := que[i]
+		if (A_Now >= item.endTime) {
 			diff := A_Now
-			diff -= value.endTime, S
+			diff -= item.endTime, S
 			if (setting.outdated || diff < 5) {
-				Popup(value.title)
+				Popup(item.title)
 			}
-			newEndTime := timeAdd(value.endTime, value.repeat)
-			fDeleteTimer(index, que)
-			if (value.endTime != newEndTime) {
-				addTimer(que, value.title, newEndTime, value.repeat)
+			newEndTime := timeAdd(item.endTime, item.repeat)
+			fDeleteTimer(i, que)
+			if (item.endTime < newEndTime) {
+				readd.Push([item.title, newEndTime, item.repeat])
 			}
 			saveFlag := true
 
-		} else if (index <= 3) {
-			if (index > 1) {
-				tipQ .= "`n"
+		} else {
+			if (A_Index <= 3) {
+				if (A_Index > 1) {
+					tipQ .= "`n"
+				}
+				tipQ .= fTip(item.title, item.endTime)
 			}
-			tipQ .= fTip(value.title, value.endTime)
+			i++
 		}
+	}
+
+	for key, item in readd {
+		addTimer(que, item*)
 	}
 
 	if (saveFlag) {
@@ -404,14 +416,13 @@ updateListView(que) {
 	}
 }
 
-queAdd(que, item) {
+getInsertPoint(que, item) {
 	for key, value in que {
 		if (value.endTime > item.endTime) {
-			que.InsertAt(key, item)
-			return
+			return key
 		}
 	}
-	que.Push(item)
+	return que.Length() + 1
 }
 
 addTimer(que, args*) {
@@ -425,8 +436,9 @@ addTimer(que, args*) {
 			endTime: args[index + 1],
 			repeat: args[index + 2]
 		)}
-		queAdd(que, item)
-		LV_Add(, item.title, fTime(item.endTime))
+		key := getInsertPoint(que, item)
+		que.InsertAt(key, item)
+		LV_Insert(key,, item.title, fTime(item.endTime))
 		index += 3
 	}
 	SetTimer, CheckTimer, On
