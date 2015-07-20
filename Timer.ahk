@@ -211,9 +211,6 @@ readFromLog(que) {
 		if (arr.Length() < 2) {
 			continue
 		}
-		; if (arr[2] < A_Now && !setting.outdated) {
-			; continue
-		; }
 		FileAppend, %A_LoopReadLine%`n
 		args.push(arr[1], arr[2], arr[3])
 	}
@@ -305,11 +302,11 @@ fTime(endTime) {
 Popup(title) {
 	global setting
 	if (setting.popup) {
-		Gui, New, +AlwaysOnTop +ToolWindow +LabelPopGui +LastFound, %title%
+		Gui, New, +AlwaysOnTop +LabelPopGui +LastFound, %title%
 		Gui, Font, s12, 細明體
 		Gui, margin, 15, 12
 		Gui, Add, Text,, %title%時間到啦！
-		Gui, Add, Button, gpopGuiClose, 我知道了
+		Gui, Add, Button, gpopGuiClose default, 我知道了
 		WinSet, Transparent, 0
 		Gui, Show, noActivate, %title%
 
