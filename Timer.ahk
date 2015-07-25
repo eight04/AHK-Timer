@@ -355,6 +355,8 @@ getGuiValue(key) {
 }
 
 loopTimerQue(que) {
+	global setting
+
 	saveFlag := false
 	tipQ := ""
 	readd := []
@@ -369,6 +371,7 @@ loopTimerQue(que) {
 		if (A_Now >= item.endTime) {
 			diff := A_Now
 			diff -= item.endTime, S
+			line := setting.outdated ", " diff
 			if (setting.outdated || diff < 5) {
 				Popup(item.title)
 			}
