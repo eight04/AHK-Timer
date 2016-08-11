@@ -254,6 +254,7 @@ fDeleteTimer(index, que) {
 	Gui, MainWindow:Default
 	que.RemoveAt(index)
 	LV_Delete(index)
+	writeToLog(que)
 }
 
 timeAdd(baseTime, diff) {
