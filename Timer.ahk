@@ -5,6 +5,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ;Global Vars
 timerQue := Array()
+popupCount := 0
 LOG_FILE := "timer.txt"
 ICON_FILE := "Icon.ico"
 setting := {
@@ -14,7 +15,9 @@ setting := {
 	beep: true,
 	popup: true,
 	outdated: false,
-	placeAt: 5
+	placeAt: 5,
+	sound: "*48",
+	beepLoop: false
 )}
 
 loadSetting()
@@ -46,9 +49,12 @@ Gui, Tab, 功能設定
 Gui, Add, Text, x6 y37 w300 h20, 快速鍵:
 Gui, Add, Edit, x47 y33 w60 h20 vghotKey disabled right,
 Gui, Add, Button, x146 y29 w100 h30 gSetHotkey, 設定快速鍵
-Gui, Add, CheckBox, x6 y67 w300 h30 voutdated gSaveSetting, 使用過期的計時器
-Gui, Add, CheckBox, x6 y97 w300 h30 vpopup gSaveSetting, 使用跳出視窗
-Gui, Add, CheckBox, x6 y127 w300 h30 vbeep gSaveSetting, 使用提示音
+Gui, Add, CheckBox, x6 y67 w150 h30 voutdated gSaveSetting, 使用過期的計時器
+Gui, Add, CheckBox, x6 y97 w150 h30 vpopup gSaveSetting, 使用跳出視窗
+Gui, Add, CheckBox, x156 y67 w150 h30 vbeep gSaveSetting, 使用提示音
+Gui, Add, CheckBox, x156 y97 w150 h30 vbeepLoop gSaveSetting, 循環播放
+Gui, Add, Text, x6 y137 w300 h20, 音效檔:
+Gui, Add, Edit, x47 y133 w159 h20 vsound gSaveSetting
 Gui, Add, Button, x322 y30 w40 h40 gChangeP vp1, ↖
 Gui, Add, Button, x372 y30 w40 h40 gChangeP vp2, ↑
 Gui, Add, Button, x422 y30 w40 h40 gChangeP vp3, ↗
@@ -71,6 +77,8 @@ GuiControl,, popup, % setting.popup
 GuiControl,, beep, % setting.beep
 GuiControl,, outdated, % setting.outdated
 GuiControl, Disable, % "p" setting.placeAt
+GuiControl,, beepLoop, % setting.beepLoop
+GuiControl,, sound, % setting.sound
 
 ;Initial
 if (setting.firstRun) {
@@ -197,6 +205,15 @@ checkTimer:	;計時器
 PopGuiEscape:
 PopGuiClose:
 	Gui, Destroy
+	popupCount -= 1
+	return
+	
+BeepLoop:
+	if (popupCount) {
+		SoundPlay, % setting.sound, 1
+	} else {
+		SetTimer, BeepLoop, Off
+	}
 	return
 
 ; ============================= Functions ============================
@@ -302,6 +319,8 @@ fTime(endTime) {
 
 Popup(title) {
 	global setting
+	global popupCount
+	
 	if (setting.popup) {
 		Gui, New, +AlwaysOnTop +LabelPopGui +LastFound, %title%
 		Gui, Font, s12, 細明體
@@ -340,13 +359,19 @@ Popup(title) {
 
 		WinMove x, y
 		WinSet, Transparent, OFF
+		
+		popupCount += 1
 
 	} else {
 		TrayTip, %title%, %title% 時間到了！
 	}
 
 	if (setting.beep) {
-		SoundPlay, *48
+		if (setting.beepLoop) {
+			SetTimer, BeepLoop, On
+		} else {
+			SoundPlay, % setting.sound
+		}
 	}
 }
 
