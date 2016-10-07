@@ -39,6 +39,17 @@ placeAt=6
 
 ; If time is up after app closed. Show popup directly when app start.
 usingOutdate=0
+
+; Loop the sound until the popup is closed
+beepLoop=0
+
+; It can be a file name or following values:
+; *-1 = Simple Beep
+; *16 = Error
+; *32 = Question
+; *48 = Exclamation
+; *64 = Info
+sound=*48
 ```
 
 License
