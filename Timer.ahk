@@ -1,30 +1,37 @@
 ﻿#SingleInstance Force
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+#Warn All
+
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-;Global Vars
+#include <HotkeyGUI>
+#include <CSetting>
+
+; Global Vars
 timerQue := Array()
 popupCount := 0
 LOG_FILE := "timer.txt"
 ICON_FILE := "Icon.ico"
-setting := {
+setting := new CSetting(
 (Join
-	hotkey: "#t",
-	firstRun: true,
-	beep: true,
-	popup: true,
-	outdated: false,
-	placeAt: 5,
-	sound: "*48",
-	beepLoop: false
-)}
+  {
+    hotkey: "#t",
+    firstRun: true,
+    beep: true,
+    popup: true,
+    outdated: false,
+    placeAt: 5,
+    sound: "*48",
+    beepLoop: false
+  },
+  "Setting.ini"
+))
+setting.load()
 
-loadSetting()
+Hotkey, % setting.get("hotkey"), MakeWindow
 
-Hotkey, % setting.hotkey, MakeWindow
-
-;Make tray menu
+; Make tray menu
 If (FileExist(ICON_FILE)) {
 	Menu, tray, Icon, %ICON_FILE%
 }
@@ -72,16 +79,16 @@ LV_ModifyCol(1, "310")
 LV_ModifyCol(2, "AutoHdr Right")
 
 ;Initial setting
-GuiControl,, ghotkey, % setting.hotkey
-GuiControl,, popup, % setting.popup
-GuiControl,, beep, % setting.beep
-GuiControl,, outdated, % setting.outdated
-GuiControl, Disable, % "p" setting.placeAt
-GuiControl,, beepLoop, % setting.beepLoop
-GuiControl,, sound, % setting.sound
+GuiControl,, ghotkey, % setting.get("hotkey")
+GuiControl,, popup, % setting.get("popup")
+GuiControl,, beep, % setting.get("beep")
+GuiControl,, outdated, % setting.get("outdated")
+GuiControl, Disable, % "p" setting.get("placeAt")
+GuiControl,, beepLoop, % setting.get("beepLoop")
+GuiControl,, sound, % setting.get("sound")
 
 ;Initial
-if (setting.firstRun) {
+if (setting.get("firstRun")) {
 	MsgBox, 4, 第一次執行,
 	(LTrim
 	第一次啟動, 此程式會執行在系統列！
@@ -90,8 +97,8 @@ if (setting.firstRun) {
 	需要再顯示這個提示嗎？
 	)
 	ifMsgBox, No, {
-		setting.firstRun := 0
-		saveSetting("firstRun")
+		setting.set("firstRun", 0)
+		setting.save("firstRun")
 	}
 }
 
@@ -103,10 +110,10 @@ return
 ; ==================== Label and Functions ==================
 
 ChangeP:
-	GuiControl, Enable, % "p" setting.placeAt
-	setting.placeAt := SubStr(A_GuiControl, 2)
-	GuiControl, Disable, % "p" setting.placeAt
-	saveSetting("placeAt")
+	GuiControl, Enable, % "p" setting.get("placeAt")
+  setting.set("placeAt", SubStr(A_GuiControl, 2))
+	GuiControl, Disable, % "p" setting.get("placeAt")
+	setting.save("placeAt")
 	return
 
 DeleteTimer:
@@ -114,21 +121,21 @@ DeleteTimer:
 	return
 
 SetHotkey:
-	hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
+	hk := HotkeyGUI(0, setting.get("hotkey"), 1, false, "設定快速鍵")	;HotkeyGUI Library
 	if (!hk) {
 		return
 	}
-	hotkey, % setting.hotkey, MakeWindow, off
-	setting.hotkey := hk
-	saveSetting("hotkey")
-	hotkey, % setting.hotkey, MakeWindow, on
+	hotkey, % setting.get("hotkey"), MakeWindow, off
+	setting.set("hotkey", hk)
+  setting.save("hotkey")
+	hotkey, % setting.get("hotkey"), MakeWindow, on
 	Gui, MainWindow:Default
 	GuiControl,, ghotkey, %hk%
 	return
 
 SaveSetting:
-	setting[A_GuiControl] := getGuiValue(A_GuiControl)
-	saveSetting(A_GuiControl)
+  setting.set(A_GuiControl, getGuiValue(A_GuiControl))
+  setting.save(A_GuiControl)
 	return
 
 Exit:
@@ -210,7 +217,7 @@ PopGuiClose:
 	
 BeepLoop:
 	if (popupCount) {
-		SoundPlay, % setting.sound, 1
+		SoundPlay, % setting.get("sound"), 1
 	} else {
 		SetTimer, BeepLoop, Off
 	}
@@ -244,26 +251,6 @@ writeToLog(que){
 	For index, value in que {
 		line := value.title "`t" value.endTime "`t" value.repeat "`n"
 		FileAppend, %line%, %LOG_FILE%
-	}
-}
-
-loadSetting() {
-	global setting
-	for key, value in setting {
-		IniRead, value, Setting.ini, Setting, %key%, %value%
-		setting[key] := value
-	}
-}
-
-saveSetting(key:="") {
-	global setting
-	if (key) {
-		value := setting[key]
-		IniWrite, %value%, Setting.ini, Setting, %key%
-	} else {
-		for key, value in setting {
-			IniWrite, %value%, Setting.ini, Setting, %key%
-		}
 	}
 }
 
@@ -321,7 +308,7 @@ Popup(title) {
 	global setting
 	global popupCount
 	
-	if (setting.popup) {
+	if (setting.get("popup")) {
 		Gui, New, +AlwaysOnTop +LabelPopGui +LastFound, %title%
 		Gui, Font, s12, 細明體
 		Gui, margin, 15, 12
@@ -337,15 +324,15 @@ Popup(title) {
 		screenWidth := screenWidth - 20
 		WinGetPos,,, w, h
 
-		if (setting.placeAt <= 3) {
+		if (setting.get("placeAt") <= 3) {
 			y := 0
-		} else if (setting.placeAt <= 6) {
+		} else if (setting.get("placeAt") <= 6) {
 			y := (screenHeight - h) / 2
 		} else {
 			y := (screenHeight - h)
 		}
 
-		col := Mod(setting.placeAt, 3)
+		col := Mod(setting.get("placeAt"), 3)
 		if (col = 1) {
 			x := 0
 		} else if (col = 2) {
@@ -366,11 +353,11 @@ Popup(title) {
 		TrayTip, %title%, %title% 時間到了！
 	}
 
-	if (setting.beep) {
-		if (setting.beepLoop) {
+	if (setting.get("beep")) {
+		if (setting.get("beepLoop")) {
 			SetTimer, BeepLoop, On
 		} else {
-			SoundPlay, % setting.sound
+			SoundPlay, % setting.get("sound")
 		}
 	}
 }
@@ -397,8 +384,7 @@ loopTimerQue(que) {
 		if (A_Now >= item.endTime) {
 			diff := A_Now
 			diff -= item.endTime, S
-			line := setting.outdated ", " diff
-			if (setting.outdated || diff < 5) {
+			if (setting.get("outdated") || diff < 5) {
 				Popup(item.title)
 			}
 			newEndTime := timeAdd(item.endTime, item.repeat)
