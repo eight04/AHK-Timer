@@ -2,15 +2,21 @@ class CSetting {
   table := ""
   filename := ""
   section := ""
-  __New(table, filename, section := "Setting") {
-    this.table := table
-    this.filename := filename
-    this.section := section
+  ; { default, filename, section, onChange }
+  __New(o) {
+    this.filename := o.filename
+    this.section := o.section
+    this.onChange := o.onChange
+    for key, value in o.default {
+      this.set(key, value)
+    }
   }
   load() {
-    for key, value in this.table {
-      IniRead, value, % this.filename, % this.section, % key, % value
-      this.table[key] := value
+    for key, _value in this.table {
+      IniRead, value, % this.filename, % this.section, % key, FAILED
+      if (newValue != "FAILED") {
+        this.set(key, value)
+      }
     }
   }
   save(key := "") {
@@ -25,7 +31,11 @@ class CSetting {
   get(key) {
     return this.table[key]
   }
-  set(key, value) {
-    this.table[key] := value
+  set(key, newValue) {
+    oldValue := this.table[key]
+    if (oldValue != newValue) {
+      this.table[key] := newValue
+      this.onChange.call(key, oldValue, newValue)
+    }
   }
 }

@@ -7,39 +7,81 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 #include <HotkeyGUI>
 #include <CSetting>
+#include <CTray>
 
-; Global Vars
-timerQue := Array()
-popupCount := 0
-LOG_FILE := "timer.txt"
-ICON_FILE := "Icon.ico"
-setting := new CSetting(
-(Join
-  {
-    hotkey: "#t",
-    firstRun: true,
-    beep: true,
-    popup: true,
-    outdated: false,
-    placeAt: 5,
-    sound: "*48",
-    beepLoop: false
-  },
-  "Setting.ini"
-))
-setting.load()
-
-Hotkey, % setting.get("hotkey"), MakeWindow
-
-; Make tray menu
-If (FileExist(ICON_FILE)) {
-	Menu, tray, Icon, %ICON_FILE%
+class CApp {
+  __New() {
+    this.setting := new CSetting({
+    (Join
+      default: {
+        hotkey: "#t",
+        firstRun: true,
+        beep: true,
+        popup: true,
+        outdated: false,
+        placeAt: 5,
+        sound: "*48",
+        beepLoop: false
+      },
+      filename: "Setting.ini",
+      section: "Setting",
+      onChange: this.onSettingChange.bind(this)
+    }))
+    this.setting.load()
+    this.timerManager := new CTimerManager({
+    (Join
+      filename: "timer.txt",
+      setting: this.setting,
+      onChange: this.onManagerChange.bind(this)
+    )})
+    this.tray := new CTray({
+    (Join
+      icon: "Icon.ico",
+      tooltip: "AHK Timer"
+      menus: {
+        "顯示視窗": this.createMainWindow.bind(this),
+        "結束": this.exit.bind(this)
+      },
+      default: "顯示視窗"
+    }))
+  }
+  onSettingChange(key, oldValue, newValue) {
+    if (key = "hotkey") {
+      if (oldValue) {
+        _ := this.createTimerWindow.bind(this)
+        Hotkey, % oldValue, % _, Off
+      }
+      if (newValue) {
+        _ := this.createTimerWindow.bind(this)
+        Hotkey, % newValue, % _, On
+      }
+    }
+  }
+  onManagerChange(key, oldValue := "", newValue := "") {
+    if (key := "size") {
+      if (oldValue != newValue && (!oldValue || !newValue)) {
+        this.resetTicking()
+      }
+    }
+  } 
+  exit() {}
+  createTimerWindow() {}
+  createMainWindow() {}
+  startTicking() {
+    _ := this.tick.bind(this)
+    SetTimer, % _, 1000
+    this._boundTick := _
+  }
+  stopTicking() {
+    _ := this._boundTick
+    SetTimer, % _, Off
+  }
+  tick() {
+    
+  }
 }
-Menu, tray, tip, AHK Timer
-Menu, tray, noStandard
-Menu, tray, Add, 顯示視窗, ShowMainWindow
-Menu, tray, Add, 結束, Exit
-Menu, Tray, Default, 顯示視窗
+
+new CApp
 
 ;Timer
 SetTimer, CheckTimer, 1000	;每秒檢查一次
