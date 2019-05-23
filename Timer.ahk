@@ -1,5 +1,6 @@
 ﻿#SingleInstance Force
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+#Warn All
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
@@ -110,8 +111,8 @@ ChangeP:
 	return
 
 DeleteTimer:
-	fDeleteTimer(LV_GetNext(), timerQue)
-	return
+  fDeleteTimer(LV_GetNext(), timerQue)
+  return
 
 SetHotkey:
 	hk := HotkeyGUI(0, setting.hotkey, 1, false, "設定快速鍵")	;HotkeyGUI Library
@@ -268,6 +269,10 @@ saveSetting(key:="") {
 }
 
 fDeleteTimer(index, que) {
+  if (!index) {
+    ; index can be 0 if the user doesn't select a timer
+    return
+  }
 	Gui, MainWindow:Default
 	que.RemoveAt(index)
 	LV_Delete(index)
