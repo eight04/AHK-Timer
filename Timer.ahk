@@ -1,6 +1,6 @@
 ﻿#SingleInstance Force
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-#Warn All
+#Warn All, StdOut
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
@@ -285,9 +285,9 @@ timeAdd(baseTime, diff) {
 		arr.InsertAt(0, 0)
 	}
 
-	baseTime += arr[1], H
-	baseTime += arr[2], M
-	baseTime += arr[3], S
+	baseTime += eval(arr[1])[1], H
+	baseTime += eval(arr[2])[1], M
+	baseTime += eval(arr[3])[1], S
 
 	return baseTime
 }
